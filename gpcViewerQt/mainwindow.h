@@ -17,6 +17,10 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    QString getOpenFileName();
+    QString getSaveFileName();
+
+public slots:
 
 private:
     Ui::MainWindow *ui;

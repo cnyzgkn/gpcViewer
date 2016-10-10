@@ -8,7 +8,7 @@ gpcWrapper::gpcWrapper()
 
 gpc_polygon* gpcWrapper::readPolygon(FILE *infile_ptr, int read_hole_flags)
 {
-    gpc_polygon* polygon = NULL;
+    gpc_polygon* polygon = new gpc_polygon;
     gpc_read_polygon(infile_ptr, read_hole_flags, polygon);
     return polygon;
 }
@@ -25,23 +25,42 @@ gpc_polygon* gpcWrapper::addContour(gpc_polygon *polygon, gpc_vertex_list *conto
     return polygon;
 }
 
-gpc_polygon* gpcWrapper::clipPolygon(gpc_op set_operation, gpc_polygon *subject_polygon, gpc_polygon *clip_polygon)
+gpc_polygon* gpcWrapper::clipPolygon(gpcOperType operType, gpc_polygon *subject_polygon, gpc_polygon *clip_polygon)
 {
-    gpc_polygon *result_polygon = NULL;
-    gpc_polygon_clip(set_operation, subject_polygon, clip_polygon, result_polygon);
+    gpc_polygon *result_polygon = new gpc_polygon;
+    switch(operType)
+    {
+    case ASubB:
+        gpc_polygon_clip(GPC_DIFF, subject_polygon, clip_polygon, result_polygon);
+        break;
+    case BSubA:
+        gpc_polygon_clip(GPC_DIFF, clip_polygon, subject_polygon, result_polygon);
+        break;
+    case XOR:
+        gpc_polygon_clip(GPC_XOR, subject_polygon, clip_polygon, result_polygon);
+        break;
+    case AND:
+        gpc_polygon_clip(GPC_UNION, subject_polygon, clip_polygon, result_polygon);
+        break;
+    case OR:
+        gpc_polygon_clip(GPC_INT, subject_polygon, clip_polygon, result_polygon);
+        break;
+    default:
+        break;
+    }
     return result_polygon;
 }
 
 gpc_tristrip* gpcWrapper::clipTristrip(gpc_op set_operation, gpc_polygon *subject_polygon, gpc_polygon *clip_polygon)
 {
-    gpc_tristrip* result_tristrip = NULL;
+    gpc_tristrip* result_tristrip = new gpc_tristrip;
     gpc_tristrip_clip(set_operation, subject_polygon, clip_polygon, result_tristrip);
     return result_tristrip;
 }
 
 gpc_tristrip* gpcWrapper::Polygon2Tristrip(gpc_polygon *polygon)
 {
-    gpc_tristrip* result_tristrip = NULL;
+    gpc_tristrip* result_tristrip = new gpc_tristrip;
     gpc_polygon_to_tristrip(polygon, result_tristrip);
     return result_tristrip;
 }
@@ -109,7 +128,6 @@ void gpcWrapper::drawTristrip(gpc_tristrip* tristrip, bool showStrips, gpcColor 
 void gpcWrapper::drawPolygon(gpc_polygon* polygon, gpcColor color)
 {
     glColor3fv(color);
-
     for (int c= 0; c < polygon->num_contours; c++)
     {
         /* Draw holes using dashed lines */
@@ -118,7 +136,7 @@ void gpcWrapper::drawPolygon(gpc_polygon* polygon, gpcColor color)
             glLineStipple(1, 0x00FF);
             glEnable(GL_LINE_STIPPLE);
         }
-        glBegin(GL_LINE_LOOP);
+        glBegin(GL_POLYGON);
         for (int v= 0; v < polygon->contour[c].num_vertices; v++)
         {
             glVertex2d(polygon->contour[c].vertex[v].x,
